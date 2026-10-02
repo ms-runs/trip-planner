@@ -8,7 +8,7 @@ It serves the repo locally, then: runs the built-in checks, adds a place by past
 Enter, saves and reloads, plays the trip day by day, and has two people edit the same plan
 against a stand-in database (nothing touches your real Supabase). Screenshots: shot-*.png
 """
-import functools, http.server, json, sys, threading, time
+import functools, http.server, json, re, sys, threading, time
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
@@ -44,7 +44,7 @@ def fake_supabase(route):
         out = [{"trip": row["data"], "saved_at": row["at"]}] if row else []
     else:
         row = DB.get(key)
-        if row and (body.get("p_base") is None or row["at"] > body["p_base"]):
+        if row and (row["data"].get("tripId") != body["p_data"].get("tripId") or body.get("p_base") is None or row["at"] > body["p_base"]):   # same rules as the real save_trip
             out = [{"ok": False, "trip": row["data"], "saved_at": row["at"]}]
         else:
             DB[key] = {"data": body["p_data"], "at": now}
@@ -54,7 +54,8 @@ def fake_supabase(route):
 
 def config_with_sharing(route):
     src = (HERE / "config.js").read_text()
-    src = src.replace("supabaseUrl: ''", "supabaseUrl: 'https://test.supabase.co'").replace("supabaseKey: ''", "supabaseKey: 'sb_publishable_test'")
+    src = re.sub(r"supabaseUrl: '[^']*'", "supabaseUrl: 'https://test.supabase.co'", src)
+    src = re.sub(r"supabaseKey: '[^']*'", "supabaseKey: 'sb_publishable_test'", src)
     route.fulfill(status=200, content_type="application/javascript", body=src)
 
 
@@ -132,6 +133,16 @@ with sync_playwright() as p:
     A.locator(f'.stop[data-sid="{sid}"] [data-action=nights][data-d="1"]').click(); A.wait_for_timeout(1300)
     J(B, "poll()"); B.wait_for_timeout(500)
     check("second person sees the change", J(B, "trip.stops[0].nights") == n + 1)
+
+    print("\n6. A share code already used by another trip (e.g. the Japan planner)")
+    DB["japan-code-in-use-1"] = {"data": {"version": 2, "stops": [{"id": "tokyo1", "name": "Tokyo", "lat": 35.68, "lng": 139.69, "nights": 1}]}, "at": "2026-01-01T00:00:00.000000+00:00"}
+    before = json.dumps(DB["japan-code-in-use-1"])
+    C = new_page(browser.new_context(viewport={"width": 1200, "height": 800}), errors, sharing=True)
+    C.goto(BASE + "#trip=japan-code-in-use-1"); C.wait_for_timeout(900)
+    C.locator('.stop [data-action=nights][data-d="1"]').first.click(); C.wait_for_timeout(1300)
+    check("the other trip's plan isn't loaded", J(C, "trip.stops[0].id") != "tokyo1")
+    check("the other trip's plan isn't overwritten", json.dumps(DB["japan-code-in-use-1"]) == before)
+    check("the page says why", "another trip" in C.inner_text("#status"), C.inner_text("#status"))
 
     check("no script errors", not errors, errors[:3])
     browser.close()

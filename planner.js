@@ -140,7 +140,7 @@ function normalize(t) {
     s.nights = clamp(parseInt(s.nights) || 1, 1, 30);
     if (i === 0) delete s.leg; else { s.leg = {...leg(DEFAULT_MODE), ...(s.leg || {})}; if (!MODES[s.leg.mode]) s.leg.mode = DEFAULT_MODE; }
   });
-  t.version = 3; t.startDate ||= ''; t.imports ||= []; t.hiddenIdeas ||= [];
+  t.version = 3; t.tripId = T.id; t.startDate ||= ''; t.imports ||= []; t.hiddenIdeas ||= [];
   return t;
 }
 let trip = normalize(readJSON(LS_KEY)) || normalize(structuredClone(DEFAULT_TRIP));
@@ -160,6 +160,7 @@ function save() {
   trip.updatedAt = new Date().toISOString();
   if (!writeLocal()) return;
   if (!REMOTE) return setStatus('local');
+  if (sync.foreign) return setStatus('error', 'Share code belongs to another trip');
   sync.dirty = true; writeSync(); setStatus('saving');
   clearTimeout(sync.timer); sync.timer = setTimeout(push, 700);
 }
@@ -170,13 +171,23 @@ function rpc(fn, body) {
   return fetch(`${CONFIG.supabaseUrl.replace(/\/$/, '')}/rest/v1/rpc/${fn}`, {method:'POST', headers, body: JSON.stringify(body)})
     .then(async r => { if (!r.ok) throw new Error(`${r.status} ${await r.text()}`); return r.json(); });
 }
+// A share code already used by a different trip (e.g. the Japan planner, which shares the
+// database) is never loaded or saved over: sharing stops and the page says why.
+const foreign = row => row && row.trip && row.trip.tripId !== T.id;
+function refuseForeign() {
+  sync.foreign = true; sync.dirty = false; clearTimeout(sync.timer); sync.timer = null;
+  setStatus('error', 'Share code belongs to another trip');
+  toast('This share code is already used by a different trip, so nothing was loaded or saved there. Change the code after #trip= in the address.');
+}
 function adopt(row) {
+  if (foreign(row)) return refuseForeign();
   trip = normalize(row.trip) || trip;
   sync.base = row.saved_at; sync.dirty = false;
   writeLocal(); writeSync(); renderAll(); setStatus('synced');
 }
 async function push() {
   sync.timer = null;
+  if (sync.foreign) return;
   if (sync.busy) { sync.again = true; return; }
   sync.busy = true;
   try {
@@ -189,7 +200,7 @@ async function push() {
 }
 const isTyping = () => document.activeElement?.matches('input,textarea,select') || $('dialog[open]');
 async function poll() {
-  if (!REMOTE || sync.busy || sync.timer || isTyping()) return;
+  if (!REMOTE || sync.foreign || sync.busy || sync.timer || isTyping()) return;
   if (sync.dirty) return push();
   try {
     const [row] = await rpc('get_trip', {p_key: TRIP_KEY});
@@ -201,7 +212,8 @@ async function initRemote() {
   setStatus('saving', 'Connecting…');
   try {
     const [row] = await rpc('get_trip', {p_key: TRIP_KEY});
-    if (!row) { sync.base = null; await push(); }                           // first person: upload this plan
+    if (foreign(row)) refuseForeign();                                    // code taken by another trip
+    else if (!row) { sync.base = null; await push(); }                      // first person: upload this plan
     else if (sync.dirty && sync.base === row.saved_at) await push();         // our offline edits are the newest
     else { if (sync.dirty) toast('Newer shared changes replaced edits made while offline.'); adopt(row); }
   } catch (e) { console.warn(e); setStatus('offline'); }
@@ -768,7 +780,8 @@ async function runChecks() {
   const stored = readJSON(LS_KEY);
   add(!stored ? 'info' : stored.updatedAt === trip.updatedAt ? 'pass' : 'warn', 'Latest change is saved', !stored ? 'no changes made yet' : stored.updatedAt === trip.updatedAt ? `saved ${new Date(trip.updatedAt).toLocaleString()}` : 'the stored copy is older than what’s on screen');
 
-  if (REMOTE) {
+  if (REMOTE && sync.foreign) add('fail', 'Shared plan is in sync', 'this share code is used by a different trip; change the code after #trip= in the address');
+  else if (REMOTE) {
     try { const [row] = await rpc('get_trip', {p_key: TRIP_KEY});
       add(row ? (sync.dirty ? 'warn' : 'pass') : 'warn', 'Shared plan is in sync', !row ? 'connected, nothing shared yet' : sync.dirty ? 'your latest change hasn’t reached the shared copy yet' : `last shared save ${new Date(row.saved_at).toLocaleString()}`); }
     catch (e) { add('fail', 'Shared plan is in sync', `can’t reach the shared copy: ${e.message.slice(0, 80)}`); }

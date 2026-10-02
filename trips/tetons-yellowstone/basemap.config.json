@@ -1,0 +1,21 @@
+{
+  "bounds": [43.25, -111.75, 45.9, -109.55],
+  "tolerance": 0.003,
+  "layers": [
+    {"kind": "region", "source": "ne:admin_1_states_provinces", "where": {"iso_a2": "US"}, "id": "postal", "name": "name"},
+    {"kind": "region", "class": "park", "source": "https://raw.githubusercontent.com/nationalparkservice/data/gh-pages/base_data/boundaries/parks/yell.geojson", "id": "yell", "name": "Yellowstone National Park"},
+    {"kind": "region", "class": "park", "source": "https://raw.githubusercontent.com/nationalparkservice/data/gh-pages/base_data/boundaries/parks/grte.geojson", "id": "grte", "name": "Grand Teton National Park"},
+    {"kind": "water", "source": "ne:lakes"},
+    {"kind": "river", "source": "ne:rivers_lake_centerlines"},
+    {"kind": "road", "source": "ne:roads", "types": ["Major Highway", "Secondary Highway"]}
+  ],
+  "labels": [
+    {"text": "Yellowstone", "lat": 44.83, "lng": -110.62, "kind": "park"},
+    {"text": "Grand Teton", "lat": 43.88, "lng": -110.9, "kind": "park"},
+    {"text": "Yellowstone Lake", "lat": 44.36, "lng": -110.33, "kind": "water"},
+    {"text": "Jackson Lake", "lat": 43.93, "lng": -110.62, "kind": "water"},
+    {"text": "Wyoming", "lat": 43.45, "lng": -109.9, "kind": "region"},
+    {"text": "Montana", "lat": 45.55, "lng": -110.2, "kind": "region"},
+    {"text": "Idaho", "lat": 44.0, "lng": -111.5, "kind": "region"}
+  ]
+}

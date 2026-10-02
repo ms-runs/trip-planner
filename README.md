@@ -11,7 +11,7 @@ A map-and-itinerary planner for any trip: stops, travel legs, saved places from 
 | `trips/<id>/basemap.config.json` | The area the map covers and the map layers to draw. |
 | `trips/<id>/basemap.js` | The map, generated from the config above. |
 | `tools/build_basemap.py` | Builds `basemap.js` for any area. |
-| `supabase-setup.sql` | One-time database setup so friends share one plan. |
+| `supabase-setup.sql` | Database setup. Already done in the shared project; only needed for a new one. |
 | `maps-link-expander.js` | Optional. Lets short `maps.app.goo.gl` links work. |
 | `verify.py` | Optional. Full automated test in a headless browser. |
 
@@ -26,29 +26,28 @@ It works now, but each person's edits stay in their own browser. Step 2 makes it
 
 Pages from different repos on the same GitHub account share one address (`YOUR-USERNAME.github.io`), so they share browser storage too. This planner keeps its data under its own keys (`tripPlanner:<trip>:…`), so it never reads or overwrites another planner's saved plan.
 
-## 2. Shared saving with a new Supabase project
+## 2. Shared saving (uses the Japan planner's Supabase project)
 
-1. At supabase.com, **New project**. Any name (e.g. `trips`), a database password you store somewhere safe, and a region near you (for Wyoming and Montana, a US West or US East region is fine). Free plan. Wait for it to finish setting up.
-2. **SQL Editor → New query**, paste all of `supabase-setup.sql`, press **Run**. You should see "Success. No rows returned".
-3. **Project Settings → API Keys** (older dashboards: **Settings → API**). Copy the **Project URL** and the **anon / publishable** key. Don't use the `service_role` or secret key: that one must never go in a web page.
-4. On GitHub, open `config.js`, click the pencil, and fill in:
-   ```js
-   supabaseUrl: 'https://abcdefgh.supabase.co',
-   supabaseKey: 'sb_publishable_…',
-   ```
-   Commit. Pages updates within a minute or two.
-5. Make up a long trip code (12+ characters, e.g. `tetons-2027-q8w4zr`) and share:
+`config.js` already points at the same Supabase project as the Japan planner, so there's nothing to set up: no new project, and no need to run `supabase-setup.sql` again (the table and functions are identical).
+
+Both planners store each plan as one row, keyed by its share code. So the only rule is: **use a share code you haven't used for Japan.**
+
+1. Make up a long code (12+ characters, e.g. `tetons-2027-q8w4zr`) and share:
    ```
    https://YOUR-USERNAME.github.io/trips/?trip=tetons-yellowstone#trip=tetons-2027-q8w4zr
    ```
    The first person to open it uploads their current plan; everyone after loads the shared one.
-6. Press **Checks** in the header. "Shared plan is in sync" should be green.
+2. Press **Checks** in the header. "Shared plan is in sync" should be green.
+
+If a code is reused by mistake, nothing is lost: both planners refuse a code that holds the other's plan (the header says the code belongs to another trip), and the database itself won't save one planner's plan over the other's.
+
+To move to a project of your own later: create one, run `supabase-setup.sql` in **SQL Editor**, and put its **Project URL** and **anon / publishable** key in `config.js` (never the secret or `service_role` key).
 
 **Treat the link like a password**: anyone with it can edit. The code after `#` isn't sent to GitHub or kept in server logs.
 
 How syncing behaves: every change saves in your browser at once and reaches the shared copy about a second later. Others' changes arrive within 15 seconds, or when you switch back to the tab. If two people save in the same second, the first wins and the other is asked to redo their change. Offline edits are kept and sent when you reconnect.
 
-**Free-plan caveat:** Supabase pauses free projects after about a week with no activity. Nothing is lost: open the dashboard and press **Restore**. While paused, the page keeps working from each browser's saved copy.
+**Free-plan caveat:** Supabase pauses free projects after about a week with no activity (use by either planner counts). Nothing is lost: open the dashboard and press **Restore**. While paused, the page keeps working from each browser's saved copy.
 
 ## 3. Optional: short Google Maps links
 

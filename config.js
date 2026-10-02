@@ -1,8 +1,10 @@
 // Settings shared by every trip in this repo. See README.md, step 2.
 window.PLANNER_CONFIG = {
-  // Shared saving (Supabase). Leave blank and each person's edits stay in their own browser.
-  supabaseUrl: '',   // e.g. 'https://abcdefgh.supabase.co'
-  supabaseKey: '',   // the project's anon / publishable key (designed to be public)
+  // Shared saving (Supabase). This is the same project as the Japan planner: every plan is
+  // stored under its own share code, so use a code you haven't used for Japan.
+  // Leave both blank and each person's edits stay in their own browser.
+  supabaseUrl: 'https://yvbrlncjbstpwzilhvqx.supabase.co',
+  supabaseKey: 'sb_publishable_M-QB_POtH1-dK3UwGPaFnQ_-qJMJ0Gj',   // the anon / publishable key (designed to be public)
 
   resolverUrl: '',   // optional: link-expander worker URL, e.g. 'https://maps-links.you.workers.dev'
 
