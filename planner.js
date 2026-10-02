@@ -67,7 +67,7 @@ const LEG = {carrier: 'Airline or operator', carrierHint: '', number: 'Flight or
 const leg = (mode, est = '', notes = '') => ({mode, est, notes, carrier:'', number:'', confirmation:'', depDate:'', depTime:'', arrDate:'', arrTime:''});
 const mkStop = (id, name, region, lat, lng, color, nights, regionIds, legIn, sections, tip = '') =>
   ({id, name, region, lat, lng, color, nights, regionIds, ...(legIn ? {leg: legIn} : {}), sections, tip, notes:'', places:[]});
-const DEFAULT_TRIP = {version: 3, startDate: T.plan.startDate || '', stops: T.plan.stops.map((s, i) => ({
+const DEFAULT_TRIP = {version: 3, startDate: T.plan.startDate || '', ...(T.plan.arrival ? {arrival: {...T.plan.arrival}} : {}), stops: T.plan.stops.map((s, i) => ({
   notes:'', places:[], tip:'', sections:[], regionIds:[], color: PALETTE[i % PALETTE.length], nights: 1, ...s,
   ...(i && s.leg ? {leg: {...leg(DEFAULT_MODE), ...s.leg}} : {}),
   sections: (s.sections || []).map(sec => ({label: sec.label, items: sec.items.map(x => typeof x === 'string' ? {text: x, tags: [], hl: false} : {tags: [], hl: false, ...x})}))}))};
@@ -500,6 +500,17 @@ function renderOverlay() {
     if (Math.hypot(b.x - a.x, b.y - a.y) > 70*k)
       routes += `<text x="${mx}" y="${my - 9*k}" font-size="${10*k}" font-weight="600" text-anchor="middle" fill="${m.color}" stroke="#fff" stroke-width="${3*k}" paint-order="stroke">${esc(m.icon + ' ' + (L.number || L.est))}</text>`;
   }
+  // Optional arrival point (e.g. the airport you fly into) with the journey to the first stop.
+  const A = trip.arrival;
+  if (A && A.lat != null && trip.stops.length) {
+    const [ax, ay] = project(A.lat, A.lng), b = pos[0], m = MODES[A.mode] || MODES[DEFAULT_MODE], booked = Boolean(A.booked);
+    routes += `<path d="M${ax} ${ay}L${b.x} ${b.y}" fill="none" stroke="${m.color}" stroke-width="${(booked ? 2.8 : 2)*k}" stroke-dasharray="${booked ? 'none' : `${7*k} ${5*k}`}" opacity="${booked ? .9 : .65}"/>
+      <g data-tip="${esc(`Arrive: ${A.name}${A.est ? `, then ${m.label.toLowerCase()} about ${A.est}` : ''}`)}"><rect x="${ax - 6*k}" y="${ay - 6*k}" width="${12*k}" height="${12*k}" rx="${2*k}" fill="#fff" stroke="${m.color}" stroke-width="${2*k}"/>
+      <text x="${ax}" y="${ay}" font-size="${8*k}" text-anchor="middle" dominant-baseline="central">✈</text></g>`;
+    const mx = (ax + b.x)/2, my = (ay + b.y)/2;
+    if (Math.hypot(b.x - ax, b.y - ay) > 70*k)
+      routes += `<text x="${mx}" y="${my - 9*k}" font-size="${10*k}" font-weight="600" text-anchor="middle" fill="${m.color}" stroke="#fff" stroke-width="${3*k}" paint-order="stroke">${esc(m.icon + ' ' + (A.est || ''))}</text>`;
+  }
   $('#routes').innerHTML = routes;
 
   // Place dots, then as many labels as fit without overlapping (more appear as you zoom in).
@@ -554,7 +565,8 @@ function viewAround(points, minW = 170) {
   const w = Math.max(minW, (Math.max(...xs) - Math.min(...xs))*1.3, (Math.max(...ys) - Math.min(...ys))*1.3*MAP_W/MAP_H), h = w*MAP_H/MAP_W;
   return [(Math.min(...xs) + Math.max(...xs))/2 - w/2, (Math.min(...ys) + Math.max(...ys))/2 - h/2, w, h];
 }
-const fitAll = () => setView(viewAround(trip.stops.map(s => project(s.lat, s.lng)), MAP_W*.5));
+const tripPoints = () => [...trip.stops.map(s => project(s.lat, s.lng)), ...(trip.arrival?.lat != null ? [project(trip.arrival.lat, trip.arrival.lng)] : [])];
+const fitAll = () => setView(viewAround(tripPoints(), MAP_W*.5));
 function zoomToStop(id) {
   const s = trip.stops.find(x => x.id === id); if (!s) return;
   setView(viewAround([project(s.lat, s.lng), ...s.places.filter(p => p.lat != null && !p.side).map(p => project(p.lat, p.lng))], Math.min(MAP_W*.6, units(T.stopZoomKm ?? 180))));
@@ -823,7 +835,7 @@ function applyTrip() {
 applyTrip();
 renderBasemap();
 renderAll();
-ui.view = clampView(viewAround(trip.stops.map(s => project(s.lat, s.lng)), MAP_W*.5)); renderOverlay();
+ui.view = clampView(viewAround(tripPoints(), MAP_W*.5)); renderOverlay();
 setStatus(REMOTE ? 'saving' : 'local', REMOTE ? 'Connecting…' : undefined);
 if (REMOTE) initRemote(); else mergeSeeds();
 setPage(view.page === 'ideas' ? 'ideas' : 'plan');

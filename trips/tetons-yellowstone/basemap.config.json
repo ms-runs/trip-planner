@@ -1,21 +1,112 @@
 {
-  "bounds": [43.25, -111.75, 45.9, -109.55],
+  "bounds": [
+    40.45,
+    -112.7,
+    46.0,
+    -109.35
+  ],
   "tolerance": 0.003,
   "layers": [
-    {"kind": "region", "source": "ne:admin_1_states_provinces", "where": {"iso_a2": "US"}, "id": "postal", "name": "name"},
-    {"kind": "region", "class": "park", "source": "https://raw.githubusercontent.com/nationalparkservice/data/gh-pages/base_data/boundaries/parks/yell.geojson", "id": "yell", "name": "Yellowstone National Park"},
-    {"kind": "region", "class": "park", "source": "https://raw.githubusercontent.com/nationalparkservice/data/gh-pages/base_data/boundaries/parks/grte.geojson", "id": "grte", "name": "Grand Teton National Park"},
-    {"kind": "water", "source": "ne:lakes"},
-    {"kind": "river", "source": "ne:rivers_lake_centerlines"},
-    {"kind": "road", "source": "ne:roads", "types": ["Major Highway", "Secondary Highway"]}
+    {
+      "kind": "region",
+      "source": "ne:admin_1_states_provinces",
+      "where": {
+        "iso_a2": "US"
+      },
+      "id": "postal",
+      "name": "name"
+    },
+    {
+      "kind": "region",
+      "class": "park",
+      "source": "https://raw.githubusercontent.com/nationalparkservice/data/gh-pages/base_data/boundaries/parks/yell.geojson",
+      "id": "yell",
+      "name": "Yellowstone National Park"
+    },
+    {
+      "kind": "region",
+      "class": "park",
+      "source": "https://raw.githubusercontent.com/nationalparkservice/data/gh-pages/base_data/boundaries/parks/grte.geojson",
+      "id": "grte",
+      "name": "Grand Teton National Park"
+    },
+    {
+      "kind": "water",
+      "source": "ne:lakes"
+    },
+    {
+      "kind": "river",
+      "source": "ne:rivers_lake_centerlines"
+    },
+    {
+      "kind": "road",
+      "source": "ne:roads",
+      "types": [
+        "Major Highway",
+        "Secondary Highway"
+      ]
+    }
   ],
   "labels": [
-    {"text": "Yellowstone", "lat": 44.83, "lng": -110.62, "kind": "park"},
-    {"text": "Grand Teton", "lat": 43.88, "lng": -110.9, "kind": "park"},
-    {"text": "Yellowstone Lake", "lat": 44.36, "lng": -110.33, "kind": "water"},
-    {"text": "Jackson Lake", "lat": 43.93, "lng": -110.62, "kind": "water"},
-    {"text": "Wyoming", "lat": 43.45, "lng": -109.9, "kind": "region"},
-    {"text": "Montana", "lat": 45.55, "lng": -110.2, "kind": "region"},
-    {"text": "Idaho", "lat": 44.0, "lng": -111.5, "kind": "region"}
+    {
+      "text": "Yellowstone",
+      "lat": 44.83,
+      "lng": -110.62,
+      "kind": "park"
+    },
+    {
+      "text": "Grand Teton",
+      "lat": 43.6,
+      "lng": -110.98,
+      "kind": "park"
+    },
+    {
+      "text": "Yellowstone Lake",
+      "lat": 44.36,
+      "lng": -110.33,
+      "kind": "water"
+    },
+    {
+      "text": "Jackson Lake",
+      "lat": 43.93,
+      "lng": -110.62,
+      "kind": "water"
+    },
+    {
+      "text": "Great Salt Lake",
+      "lat": 41.15,
+      "lng": -112.45,
+      "kind": "water"
+    },
+    {
+      "text": "Bear Lake",
+      "lat": 41.98,
+      "lng": -111.33,
+      "kind": "water"
+    },
+    {
+      "text": "Wyoming",
+      "lat": 42.6,
+      "lng": -109.9,
+      "kind": "region"
+    },
+    {
+      "text": "Montana",
+      "lat": 45.75,
+      "lng": -110.0,
+      "kind": "region"
+    },
+    {
+      "text": "Idaho",
+      "lat": 43.2,
+      "lng": -112.2,
+      "kind": "region"
+    },
+    {
+      "text": "Utah",
+      "lat": 40.7,
+      "lng": -110.6,
+      "kind": "region"
+    }
   ]
 }
